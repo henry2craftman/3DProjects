@@ -1,71 +1,82 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using TMPro;
-using System;
 
-[ExecuteAlways]
-public class CoordinateLabeler : MonoBehaviour
+namespace TowerDefense
 {
-    [SerializeField] Color defaultColor = Color.white;
-    [SerializeField] Color blockColor = Color.gray;
+    using System.Collections;
+    using System.Collections.Generic;
+    using UnityEngine;
+    using TMPro;
+    using System;
 
-    TextMeshPro label;
-    Vector2Int coordinates = new Vector2Int();
-    Waypoint waypoint;
-
-    private void Awake()
+    [ExecuteAlways]
+    [RequireComponent(typeof(TextMeshPro))]
+    public class CoordinateLabeler : MonoBehaviour
     {
-        label = GetComponent<TextMeshPro>();
-        label.enabled = false;
+        [SerializeField] Color defaultColor = Color.white;
+        [SerializeField] Color blockColor = Color.gray;
 
-        waypoint = GetComponentInParent<Waypoint>();
-        DisplayCoordinates();
-    }
+        TextMeshPro label;
+        Vector2Int coordinates = new Vector2Int();
+        Waypoint waypoint;
 
-    void Update()
-    {
-        if (!Application.isPlaying)
+        private void Awake()
         {
+            label = GetComponent<TextMeshPro>();
+            label.enabled = false;
+
+            waypoint = GetComponentInParent<Waypoint>();
             DisplayCoordinates();
-            UpdateOIbjectName();
         }
 
-        ColorCoordinates();
-
-        ToggleLabels();
-    }
-
-    void ToggleLabels()
-    {
-        if(Input.GetKeyDown(KeyCode.C)) 
+        void Update()
         {
-            label.enabled = !label.enabled;
-        }
-    }
+            if (!Application.isPlaying)
+            {
+                DisplayCoordinates();
+                UpdateOIbjectName();
+            }
 
-    private void ColorCoordinates()
-    {
-        if(waypoint.IsPlaceable)
+            SetLabelColor();
+
+            ToggleLabels();
+        }
+
+        void ToggleLabels()
         {
-            label.color = defaultColor;
+            if (Input.GetKeyDown(KeyCode.C))
+            {
+                label.enabled = !label.enabled;
+            }
         }
-        else
+
+        private void SetLabelColor()
         {
-            label.color = blockColor;
+            if (waypoint.IsPlaceable)
+            {
+                label.color = defaultColor;
+            }
+            else
+            {
+                label.color = blockColor;
+            }
+        }
+
+        private void DisplayCoordinates()
+        {
+            // 유니티 에디터 관련 코드는 빌드시 들어갈 수 없음
+            coordinates.x = Mathf.RoundToInt(transform.parent.position.x / UnityEditor.EditorSnapSettings.move.x);
+            coordinates.y = Mathf.RoundToInt(transform.parent.position.z / UnityEditor.EditorSnapSettings.move.z);
+
+            label.text = $"{coordinates.x},{coordinates.y}";
+        }
+
+        void UpdateOIbjectName()
+        {
+            transform.parent.name = coordinates.ToString();
         }
     }
 
-    private void DisplayCoordinates()
-    {
-        coordinates.x = Mathf.RoundToInt(transform.parent.position.x / UnityEditor.EditorSnapSettings.move.x);
-        coordinates.y = Mathf.RoundToInt(transform.parent.position.z / UnityEditor.EditorSnapSettings.move.z);
-        
-        label.text = $"{coordinates.x},{coordinates.y}";
-    }
-
-    void UpdateOIbjectName()
-    {
-        transform.parent.name = coordinates.ToString();
-    }
 }
+
