@@ -82,9 +82,10 @@ namespace TowerDefense
 
         private void DisplayCoordinates()
         {
+            if (gridManager == null) return;
             // 유니티 에디터 관련 코드는 빌드시 들어갈 수 없음
-            coordinates.x = Mathf.RoundToInt(transform.parent.position.x / UnityEditor.EditorSnapSettings.move.x);
-            coordinates.y = Mathf.RoundToInt(transform.parent.position.z / UnityEditor.EditorSnapSettings.move.z);
+            coordinates.x = Mathf.RoundToInt(transform.parent.position.x / gridManager.UnityGridSize);
+            coordinates.y = Mathf.RoundToInt(transform.parent.position.z / gridManager.UnityGridSize);
 
             label.text = $"{coordinates.x},{coordinates.y}";
         }
@@ -93,6 +94,8 @@ namespace TowerDefense
         {
             transform.parent.name = coordinates.ToString();
         }
+
+
     }
 }
 

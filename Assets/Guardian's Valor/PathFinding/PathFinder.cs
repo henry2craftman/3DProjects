@@ -6,9 +6,10 @@ using UnityEngine.TextCore.LowLevel;
 
 public class PathFinder : MonoBehaviour
 {
-    [SerializeField] Transform locator;
     [SerializeField] Vector2Int startCoordinates;
+    public Vector2Int StartCoordinates { get { return startCoordinates; } }
     [SerializeField] Vector2Int destinationCoordinates;
+    public Vector2Int DestinationCoordinates { get { return destinationCoordinates; } }
 
     Node startNode;
     Node destinationNode;
@@ -29,18 +30,28 @@ public class PathFinder : MonoBehaviour
         if(gridManager != null)
         {
             grid = gridManager.Grid;
+
+            // 시작시 startNode, destinationNode 만들어주기
+            startNode = grid[startCoordinates];
+            destinationNode = grid[destinationCoordinates];
         }
     }
 
     void Start()
     {
-        // 시작시 startNode, destinationNode 만들어주기
-        startNode = gridManager.Grid[startCoordinates];
-        destinationNode = gridManager.Grid[destinationCoordinates];
+        GetNewPath();
+    }
 
-        StartCoroutine(BFS());
+    public List<Node> GetNewPath()
+    {
+        return GetNewPath(startCoordinates);
+    }
 
-        
+    public List<Node> GetNewPath(Vector2Int coordinates)
+    {
+        gridManager.ResetNode();
+        BFS(coordinates);
+        return BuildPath();
     }
 
     private void ExploreNeighbors()
@@ -77,12 +88,18 @@ public class PathFinder : MonoBehaviour
         }
     }
 
-    IEnumerator BFS() // BreadthFirstSearch
+    void BFS(Vector2Int coordinates) // BreadthFirstSearch
     {
+        startNode.isWalkable = true;
+        destinationNode.isWalkable = true;
+
+        frontier.Clear(); // 동적 BFS를 위해 초기화
+        reached.Clear(); 
+
         bool isRunning = true; // 루프에서 나가기 위한 변수
 
-        frontier.Enqueue(startNode);
-        reached.Add(startCoordinates, startNode);
+        frontier.Enqueue(grid[coordinates]);
+        reached.Add(coordinates, grid[coordinates]);
 
         while(frontier.Count > 0 && isRunning) // 탐험할 노드가 트리에 남아 있을 때 까지 반복
         {
@@ -91,17 +108,11 @@ public class PathFinder : MonoBehaviour
 
             ExploreNeighbors();
 
-            locator.position = new Vector3(currentSearchNode.coordinates.x * 10, 0, currentSearchNode.coordinates.y * 10);
-
             if (currentSearchNode.coordinates == destinationCoordinates)
             {
                 isRunning = false;
             }
-
-            yield return new WaitForSeconds(1);
         }
-
-        BuildPath();
     }
 
     List<Node> BuildPath()
@@ -122,5 +133,30 @@ public class PathFinder : MonoBehaviour
         path.Reverse();
 
         return path;
+    }
+
+    public bool BlockPath(Vector2Int coordinates)
+    {
+        if (grid.ContainsKey(coordinates))
+        {
+            bool previousState = grid[coordinates].isWalkable;
+            grid[coordinates].isWalkable = false;
+            List<Node> newPath = GetNewPath(); // 다시 찾은 경로
+            grid[coordinates].isWalkable = previousState;
+
+            // 경로 탐색이 되지 않는 경우
+            if(newPath.Count <= 1)
+            {
+                GetNewPath();
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public void NotifyReceivers()
+    {
+        BroadcastMessage("RecalculatePath", false, SendMessageOptions.DontRequireReceiver);
     }
 }
